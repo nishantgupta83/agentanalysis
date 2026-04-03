@@ -1,0 +1,122 @@
+<svg width="1200" height="640" viewBox="0 0 1200 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="90" y1="70" x2="1110" y2="570" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7F4EE"/>
+      <stop offset="1" stop-color="#EEF3F3"/>
+    </linearGradient>
+    <linearGradient id="accent1" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#F9F7F2"/>
+      <stop offset="1" stop-color="#FFFFFF"/>
+    </linearGradient>
+    <linearGradient id="accent2" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#DDEBE8"/>
+      <stop offset="1" stop-color="#F7FBFA"/>
+    </linearGradient>
+    <linearGradient id="accent3" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#E5EEEA"/>
+      <stop offset="1" stop-color="#FAFCFC"/>
+    </linearGradient>
+    <linearGradient id="accent4" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#6B8397"/>
+      <stop offset="1" stop-color="#8EA6B8"/>
+    </linearGradient>
+    <filter id="shadow" x="-30" y="-30" width="260" height="340" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="10" dy="12" stdDeviation="14" flood-color="#94A3B8" flood-opacity="0.18"/>
+    </filter>
+    <filter id="panelShadow" x="40" y="110" width="1120" height="470" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="16" dy="20" stdDeviation="24" flood-color="#94A3B8" flood-opacity="0.16"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1 1L10 6L1 11" stroke="#8CA0AD" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="640" rx="28" fill="url(#bg)"/>
+  <rect x="84" y="72" width="1032" height="496" rx="26" fill="#FCFAF6" stroke="#E6E1D8"/>
+  <path d="M84 144H1116" stroke="#E8E2D8"/>
+
+  <text x="112" y="122" fill="#5A6675" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="22" font-weight="700">
+    Local AI logs into analytics
+  </text>
+  <text x="112" y="166" fill="#8892A0" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="14">
+    Parse local assistant sessions, roll them into daily metrics, then serve a browser-safe dashboard.
+  </text>
+
+  <g filter="url(#panelShadow)">
+    <rect x="110" y="206" width="980" height="284" rx="24" fill="#FFFDF9"/>
+  </g>
+
+  <g transform="translate(126 228)">
+    <g filter="url(#shadow)">
+      <rect x="0" y="0" width="210" height="230" rx="22" fill="url(#accent1)" stroke="#E2DCD2"/>
+      <path d="M0 76H210" stroke="#E8E2D8"/>
+      <text x="105" y="48" text-anchor="middle" fill="#495260" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="20" font-weight="700">Raw local</text>
+      <text x="105" y="76" text-anchor="middle" fill="#495260" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="20" font-weight="700">logs</text>
+      <rect x="65" y="108" width="80" height="96" rx="12" fill="#FFFFFF" stroke="#CCD5DF" stroke-width="2"/>
+      <path d="M84 132H126" stroke="#CBD5DF" stroke-width="3" stroke-linecap="round"/>
+      <path d="M84 149H126" stroke="#CBD5DF" stroke-width="3" stroke-linecap="round"/>
+      <path d="M84 166H118" stroke="#CBD5DF" stroke-width="3" stroke-linecap="round"/>
+      <path d="M145 118V145H172" stroke="#CBD5DF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M105 175L105 212" stroke="#E4DCCF" stroke-width="2" stroke-dasharray="5 6"/>
+      <text x="28" y="262" fill="#6A7483" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="15">Token usage,</text>
+      <text x="28" y="286" fill="#6A7483" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="15">tool calls, sessions</text>
+    </g>
+
+    <path d="M230 115H292" stroke="#93A5B1" stroke-width="2.2" marker-end="url(#arrow)"/>
+
+    <g filter="url(#shadow)" transform="translate(308 0)">
+      <rect x="0" y="0" width="210" height="230" rx="22" fill="url(#accent2)" stroke="#D3E1DD"/>
+      <path d="M0 76H210" stroke="#D9E6E2"/>
+      <text x="105" y="48" text-anchor="middle" fill="#FFFFFF" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="20" font-weight="700">Normalized</text>
+      <text x="105" y="76" text-anchor="middle" fill="#FFFFFF" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="20" font-weight="700">events</text>
+      <path d="M63 156L83 136L101 156" stroke="#6BA1AB" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M63 156L83 176" stroke="#6BA1AB" stroke-width="4" stroke-linecap="round"/>
+      <path d="M147 156L127 136L109 156" stroke="#6BA1AB" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M147 156L127 176" stroke="#6BA1AB" stroke-width="4" stroke-linecap="round"/>
+      <path d="M86 156H124" stroke="#6BA1AB" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+      <circle cx="84" cy="156" r="5" fill="#6BA1AB"/>
+      <circle cx="126" cy="156" r="5" fill="#6BA1AB"/>
+      <text x="24" y="262" fill="#6A7483" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="15">Projects, models,</text>
+      <text x="24" y="286" fill="#6A7483" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="15">metadata, sources</text>
+    </g>
+
+    <path d="M538 115H600" stroke="#93A5B1" stroke-width="2.2" marker-end="url(#arrow)"/>
+
+    <g filter="url(#shadow)" transform="translate(616 0)">
+      <rect x="0" y="0" width="210" height="230" rx="22" fill="url(#accent3)" stroke="#D6E0DA"/>
+      <path d="M0 76H210" stroke="#DEE8E2"/>
+      <text x="105" y="48" text-anchor="middle" fill="#4F5A62" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="20" font-weight="700">Daily</text>
+      <text x="105" y="76" text-anchor="middle" fill="#4F5A62" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="20" font-weight="700">rollups</text>
+      <ellipse cx="82" cy="130" rx="28" ry="14" fill="#DAE3DF" stroke="#AFC0C5" stroke-width="2"/>
+      <path d="M54 130V171C54 179 66 186 82 186C98 186 110 179 110 171V130" fill="#E5EDE9" stroke="#AFC0C5" stroke-width="2"/>
+      <path d="M117 150C129 141 145 143 154 154C161 163 160 178 150 187" stroke="#8AAAB0" stroke-width="3" stroke-linecap="round"/>
+      <path d="M142 145L149 133" stroke="#8AAAB0" stroke-width="3" stroke-linecap="round"/>
+      <path d="M150 145L162 139" stroke="#8AAAB0" stroke-width="3" stroke-linecap="round"/>
+      <path d="M144 191L150 203" stroke="#8AAAB0" stroke-width="3" stroke-linecap="round"/>
+      <path d="M152 188L165 193" stroke="#8AAAB0" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="142" cy="169" r="13" fill="#F7FAFA" stroke="#AFC0C5" stroke-width="2"/>
+      <text x="134" y="173" fill="#72808C" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="11" font-weight="700">P/T</text>
+      <text x="22" y="262" fill="#6A7483" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="15">Supabase aggregate</text>
+      <text x="22" y="286" fill="#6A7483" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="15">usage_* tables</text>
+    </g>
+
+    <path d="M846 115H908" stroke="#93A5B1" stroke-width="2.2" marker-end="url(#arrow)"/>
+
+    <g filter="url(#shadow)" transform="translate(924 0)">
+      <rect x="0" y="0" width="210" height="230" rx="22" fill="url(#accent4)" stroke="#7D97AA"/>
+      <path d="M0 76H210" stroke="#9EB5C5"/>
+      <text x="105" y="48" text-anchor="middle" fill="#FFFFFF" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="20" font-weight="700">Public</text>
+      <text x="105" y="76" text-anchor="middle" fill="#FFFFFF" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="20" font-weight="700">dashboard</text>
+      <rect x="20" y="100" width="170" height="94" rx="14" fill="#FFFDF9" stroke="#D8E0E4"/>
+      <rect x="32" y="114" width="62" height="34" rx="8" fill="#F7FBFB" stroke="#D8E0E4"/>
+      <rect x="102" y="114" width="76" height="34" rx="8" fill="#F7FBFB" stroke="#D8E0E4"/>
+      <rect x="32" y="156" width="62" height="26" rx="8" fill="#F7FBFB" stroke="#D8E0E4"/>
+      <rect x="102" y="156" width="76" height="26" rx="8" fill="#F7FBFB" stroke="#D8E0E4"/>
+      <path d="M45 141H83" stroke="#A8CDD1" stroke-width="4" stroke-linecap="round"/>
+      <path d="M112 138L124 130L136 136L148 122L160 128L170 120" stroke="#8AB3C8" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M46 176C55 168 63 166 72 170C79 173 84 171 90 163" stroke="#7CB1BE" stroke-width="3" stroke-linecap="round"/>
+      <path d="M113 176H166" stroke="#CBD6DC" stroke-width="3" stroke-linecap="round"/>
+      <text x="105" y="220" text-anchor="middle" fill="#E7EEF2" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="15">web/index.html + web/app.js</text>
+    </g>
+  </g>
+</svg>

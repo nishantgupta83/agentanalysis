@@ -1,13 +1,30 @@
-# AI Usage Analytics Template
+<div align="center">
+  <h1>AI Usage Analytics Template</h1>
+  <p><strong>Public-safe starter for turning local AI assistant logs into a Supabase-backed dashboard.</strong></p>
+  <p>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-0F766E.svg" alt="MIT License"></a>
+    <img src="https://img.shields.io/badge/data-Supabase-0F766E.svg" alt="Supabase">
+    <img src="https://img.shields.io/badge/API-PHP%20proxy-475569.svg" alt="PHP proxy API">
+    <img src="https://img.shields.io/badge/frontend-static%20dashboard-64748B.svg" alt="Static dashboard">
+    <img src="https://img.shields.io/badge/repo-public--safe%20template-C08457.svg" alt="Public-safe template">
+  </p>
+  <p>
+    <a href="docs/architecture.md"><strong>Architecture</strong></a>
+    &nbsp;•&nbsp;
+    <a href="docs/api.md"><strong>API Reference</strong></a>
+    &nbsp;•&nbsp;
+    <a href="docs/security.md"><strong>Security Notes</strong></a>
+  </p>
+</div>
 
-Public-safe template for an AI usage analytics pipeline:
+![AI Usage Analytics README hero](docs/assets/readme-hero.svg)
+
+This repo preserves the real system shape and endpoint names while replacing environment-specific values with placeholders. The end-to-end path stays intact:
 
 1. Read local Codex and Claude JSONL logs
 2. Normalize usage and tool-call events
 3. Aggregate daily analytics into Supabase `usage_*` tables
 4. Serve a public dashboard through PHP endpoints that read from Supabase server-side
-
-This repo is a sanitized architecture repo. It keeps the real system shape and endpoint names, but replaces all environment-specific values with placeholders.
 
 ## What This Repo Shows
 
@@ -15,6 +32,13 @@ This repo is a sanitized architecture repo. It keeps the real system shape and e
 - How raw rows become daily rollups in Supabase
 - How the public dashboard fetches data from `web/api/dashboard_data.php`
 - How the browser stays isolated from the Supabase service-role key
+
+## At A Glance
+
+- Reusable ingestion pipeline for Codex and Claude JSONL session logs
+- Raw event storage plus daily rollups for projects, models, sources, and sessions
+- PHP API layer that keeps Supabase secrets server-side and returns browser-safe JSON
+- Static dashboard frontend that reads aggregate analytics without exposing private keys
 
 ## End-to-End Flow
 
