@@ -1,8 +1,8 @@
 # Architecture
 
-![End-to-end flow](assets/end-to-end-flow.svg)
+![End-to-end flow](assets/end-to-end-flow.png)
 
-![Public read boundary](assets/public-read-boundary.svg)
+![Public read boundary](assets/public-read-boundary.png)
 
 ## Goal
 

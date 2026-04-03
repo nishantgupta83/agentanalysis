@@ -17,7 +17,7 @@
   </p>
 </div>
 
-![AI Usage Analytics README hero](docs/assets/readme-hero.svg)
+![AI Usage Analytics README hero](docs/assets/readme-hero.png)
 
 This repo preserves the real system shape and endpoint names while replacing environment-specific values with placeholders. The end-to-end path stays intact:
 
@@ -42,9 +42,9 @@ This repo preserves the real system shape and endpoint names while replacing env
 
 ## End-to-End Flow
 
-![End-to-end flow](docs/assets/end-to-end-flow.svg)
+![End-to-end flow](docs/assets/end-to-end-flow.png)
 
-![Public read boundary](docs/assets/public-read-boundary.svg)
+![Public read boundary](docs/assets/public-read-boundary.png)
 
 ## Repo Layout
 
