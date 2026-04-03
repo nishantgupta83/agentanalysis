@@ -123,3 +123,7 @@ See:
 - [Architecture](docs/architecture.md)
 - [API Reference](docs/api.md)
 - [Security Notes](docs/security.md)
+
+## License
+
+Licensed under the MIT License. See [LICENSE](LICENSE).
