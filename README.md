@@ -18,20 +18,9 @@ This repo is a sanitized architecture repo. It keeps the real system shape and e
 
 ## End-to-End Flow
 
-```mermaid
-flowchart LR
-    A[Local Codex JSONL logs] --> B[dashboard/parsers.py]
-    A2[Local Claude JSONL logs] --> B
-    A --> C[dashboard/psyco.py]
-    A2 --> C
-    B --> D[dashboard/rollups.py]
-    C --> D
-    D --> E[scripts/sync_usage_to_supabase.py]
-    E --> F[Supabase usage_* tables]
-    F --> G[web/api/dashboard_data.php]
-    G --> H[web/app.js]
-    H --> I[Public dashboard in web/index.html]
-```
+![End-to-end flow](docs/assets/end-to-end-flow.svg)
+
+![Public read boundary](docs/assets/public-read-boundary.svg)
 
 ## Repo Layout
 

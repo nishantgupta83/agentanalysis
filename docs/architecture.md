@@ -1,5 +1,9 @@
 # Architecture
 
+![End-to-end flow](assets/end-to-end-flow.svg)
+
+![Public read boundary](assets/public-read-boundary.svg)
+
 ## Goal
 
 Capture local AI coding activity, store it in a queryable analytics warehouse, and publish a safe public dashboard without exposing raw credentials in browser code.
@@ -16,6 +20,14 @@ The parser layer extracts:
 - token usage events
 - tool invocations
 - session-level conversation and code-writing metrics
+
+## Request Lifecycle
+
+1. Local Codex and Claude JSONL files are parsed into normalized event rows.
+2. `dashboard/rollups.py` sanitizes paths, hashes project names, and prepares write-safe records.
+3. `scripts/sync_usage_to_supabase.py` upserts raw and aggregate tables into Supabase.
+4. `web/api/dashboard_data.php` reads a selected time window from Supabase on the server.
+5. `web/app.js` renders the returned JSON payload into the public dashboard.
 
 ## Processing Layers
 
@@ -102,9 +114,14 @@ These drive most dashboard summaries and reduce read cost.
 
 This can be used to audit sync status, row counts, warnings, and failures.
 
+## Why There Are Both Raw and Aggregate Tables
+
+- Raw tables preserve tool-level and event-level detail for drilldowns and server-side analytics.
+- Aggregate tables keep the public dashboard fast and simple to query.
+- The metadata row gives the frontend one compact place to read overall totals and date bounds.
+
 ## Why the Browser Does Not Read Supabase Directly
 
 The public dashboard needs some server-side detail that should not be openly queryable from the browser, especially session-level and tool-level detail. The template keeps those reads in `web/api/dashboard_data.php`, where the service-role key stays server-side.
 
 The browser only sees JSON returned by the PHP proxy.
-
