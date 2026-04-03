@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import json
-from collections import Counter, defaultdict
+import re
+from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -56,18 +57,15 @@ class SessionStats:
     files_touched: set[str] = field(default_factory=set)
     mcp_tools: Counter = field(default_factory=Counter)
     tool_counts: Counter = field(default_factory=Counter)
+    # New metrics
+    subagent_count: int = 0
+    thinking_blocks: int = 0
+    turn_durations_ms: list[int] = field(default_factory=list)
+    rate_limit_max_pct: float = 0.0
+    rate_limit_daily_max_pct: float = 0.0
 
 
-def _iter_jsonl(path: Path) -> Any:
-    with path.open("r", encoding="utf-8") as handle:
-        for line in handle:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                yield json.loads(line)
-            except json.JSONDecodeError:
-                continue
+from dashboard import iter_jsonl as _iter_jsonl
 
 
 def _project_name(project_path: str, source_path: Path) -> str:
@@ -88,7 +86,7 @@ def _project_name(project_path: str, source_path: Path) -> str:
 def _count_lines(text: str) -> int:
     if not text:
         return 0
-    return len(text.splitlines()) or 1
+    return len(text.splitlines())
 
 
 def _extract_text_items(content: Any) -> list[str]:
@@ -147,13 +145,134 @@ def _parse_apply_patch_args(arguments: Any) -> tuple[int, set[str]]:
     return lines_written, files
 
 
+def _decode_json_like(value: Any) -> Any:
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        try:
+            decoded = json.loads(value)
+            return decoded
+        except json.JSONDecodeError:
+            return value
+    return value
+
+
+def _extract_target_files_from_payload(tool_name: str, payload: Any) -> set[str]:
+    files: set[str] = set()
+    decoded = _decode_json_like(payload)
+    lowered = (tool_name or "").lower()
+
+    if isinstance(decoded, dict):
+        for key in ("file_path", "path", "target_file", "filename", "file"):
+            value = decoded.get(key)
+            if isinstance(value, str) and value.strip():
+                files.add(value.strip())
+
+        if lowered == "multiedit":
+            edits = decoded.get("edits") or []
+            if isinstance(edits, list):
+                for edit in edits:
+                    if not isinstance(edit, dict):
+                        continue
+                    value = (
+                        edit.get("file_path")
+                        or edit.get("path")
+                        or edit.get("target_file")
+                        or ""
+                    )
+                    if isinstance(value, str) and value.strip():
+                        files.add(value.strip())
+
+    if lowered == "apply_patch":
+        _lines, patch_files = _parse_apply_patch_args(payload)
+        files.update(patch_files)
+
+    return files
+
+
+def _infer_tool_success_from_output(output: Any) -> bool | None:
+    if output is None:
+        return None
+
+    if isinstance(output, (dict, list)):
+        text = json.dumps(output, ensure_ascii=False)
+    else:
+        text = str(output)
+
+    cleaned = text.strip()
+    if not cleaned:
+        return None
+
+    lowered = cleaned.lower()
+    exit_code_match = re.search(r"process exited with code\s+(-?\d+)", lowered)
+    if exit_code_match:
+        return int(exit_code_match.group(1)) == 0
+
+    if "\"is_error\":false" in lowered:
+        return True
+    if "\"is_error\":true" in lowered:
+        return False
+    if "success. updated the following files" in lowered:
+        return True
+
+    failure_tokens = [
+        "permission denied",
+        "timed out",
+        "traceback",
+        "failed",
+        "exception",
+        "operation not permitted",
+    ]
+    if any(token in lowered for token in failure_tokens):
+        return False
+
+    return None
+
+
+def _extract_query_text_from_payload(tool_name: str, payload: Any) -> str | None:
+    lowered = (tool_name or "").lower()
+    decoded = _decode_json_like(payload)
+
+    if lowered in {"websearch", "search_query"} and isinstance(decoded, dict):
+        if isinstance(decoded.get("query"), str):
+            return decoded.get("query")
+        if isinstance(decoded.get("q"), str):
+            return decoded.get("q")
+
+    if lowered == "search_query" and isinstance(decoded, dict):
+        items = decoded.get("search_query")
+        if isinstance(items, list):
+            queries = []
+            for item in items:
+                if isinstance(item, dict):
+                    q = item.get("q")
+                    if isinstance(q, str) and q.strip():
+                        queries.append(q.strip())
+            if queries:
+                return " | ".join(queries)
+
+    if "websearch" in lowered and isinstance(decoded, dict):
+        query = decoded.get("query") or decoded.get("q")
+        if isinstance(query, str) and query.strip():
+            return query.strip()
+
+    if "search" in lowered and isinstance(decoded, dict):
+        query = decoded.get("query") or decoded.get("q")
+        if isinstance(query, str) and query.strip():
+            return query.strip()
+
+    return None
+
+
 def _is_mcp_codex_tool(name: str) -> bool:
     if not name:
         return False
     if name in CODEX_CORE_TOOLS:
         return False
-    lowered = name.lower()
-    return lowered.startswith("mcp") or "mcp" in lowered or True
+    lowered = name.lower().strip()
+    if lowered.startswith("mcp"):
+        return True
+    return re.search(r"(^|[._:/-])mcp([._:/-]|$)", lowered) is not None
 
 
 def _is_mcp_claude_tool(name: str) -> bool:
@@ -162,7 +281,7 @@ def _is_mcp_claude_tool(name: str) -> bool:
     if name in CLAUDE_BUILTIN_TOOLS:
         return False
     lowered = name.lower()
-    return lowered.startswith("mcp") or "mcp" in lowered or "__" in name
+    return lowered.startswith("mcp") or "mcp" in lowered or "mcp__" in name
 
 
 def _session_key(source: str, session_id: str) -> tuple[str, str]:
@@ -207,6 +326,7 @@ def _parse_codex_psyco(
     chat_rows: list[dict[str, Any]] = []
     tool_rows: list[dict[str, Any]] = []
     warnings: list[str] = []
+    tool_row_index_by_call: dict[tuple[str, str], int] = {}
 
     for file_path in sorted(codex_root.rglob("*.jsonl")) if codex_root.exists() else []:
         session_id = file_path.stem
@@ -236,6 +356,17 @@ def _parse_codex_psyco(
                         stats_store, "codex", session_id, project_path, file_path
                     )
                     _update_time_window(stats, timestamp)
+                    continue
+
+                # Extract rate limits and turn durations from event_msg
+                if event_type == "event_msg":
+                    sub_type = payload.get("type")
+                    if sub_type == "token_count":
+                        rate_limits = payload.get("rate_limits") or {}
+                        primary_pct = rate_limits.get("primary", {}).get("used_percent", 0) or 0
+                        secondary_pct = rate_limits.get("secondary", {}).get("used_percent", 0) or 0
+                        stats.rate_limit_max_pct = max(stats.rate_limit_max_pct, float(primary_pct))
+                        stats.rate_limit_daily_max_pct = max(stats.rate_limit_daily_max_pct, float(secondary_pct))
                     continue
 
                 if event_type != "response_item":
@@ -280,10 +411,18 @@ def _parse_codex_psyco(
                         stats.mcp_tools[name] += 1
 
                     arguments = payload.get("arguments")
+                    query_text = _extract_query_text_from_payload(name, arguments)
+                    target_files = _extract_target_files_from_payload(name, arguments)
                     if name == "apply_patch":
                         lines_written, touched_files = _parse_apply_patch_args(arguments)
                         stats.code_lines_written += lines_written
                         stats.files_touched.update(touched_files)
+                        target_files.update(touched_files)
+
+                    if target_files:
+                        stats.files_touched.update(target_files)
+
+                    call_id = str(payload.get("call_id") or "")
 
                     tool_rows.append(
                         {
@@ -293,8 +432,29 @@ def _parse_codex_psyco(
                             "project_name": stats.project_name,
                             "tool_name": name,
                             "is_mcp": is_mcp,
+                            "query_text": query_text,
+                            "target_file": ", ".join(sorted(target_files)) if target_files else "",
+                            "call_id": call_id,
+                            "success": None,
+                            "error_hint": "",
                         }
                     )
+                    if call_id:
+                        tool_row_index_by_call[(session_id, call_id)] = len(tool_rows) - 1
+                    continue
+
+                if payload_type == "function_call_output":
+                    call_id = str(payload.get("call_id") or "")
+                    output = payload.get("output")
+                    success = _infer_tool_success_from_output(output)
+                    error_hint = ""
+                    if success is False:
+                        error_hint = str(output or "").replace("\n", " ").strip()[:220]
+                    if call_id and (session_id, call_id) in tool_row_index_by_call:
+                        row_idx = tool_row_index_by_call[(session_id, call_id)]
+                        tool_rows[row_idx]["success"] = success
+                        if error_hint:
+                            tool_rows[row_idx]["error_hint"] = error_hint
         except Exception as exc:  # pragma: no cover - defensive for mixed historical logs
             warnings.append(f"Failed to parse Codex session file {file_path}: {exc}")
 
@@ -308,11 +468,27 @@ def _parse_claude_psyco(
     chat_rows: list[dict[str, Any]] = []
     tool_rows: list[dict[str, Any]] = []
     warnings: list[str] = []
+    tool_row_index_by_call: dict[tuple[str, str], int] = {}
 
     for file_path in sorted(claude_root.rglob("*.jsonl")) if claude_root.exists() else []:
         try:
             for item in _iter_jsonl(file_path):
                 item_type = item.get("type")
+
+                # Extract turn duration from system events
+                if item_type == "system":
+                    subtype = item.get("subtype")
+                    if subtype == "turn_duration":
+                        duration_ms = item.get("durationMs")
+                        if isinstance(duration_ms, (int, float)) and duration_ms > 0:
+                            session_id = item.get("sessionId") or file_path.stem
+                            project_path = item.get("cwd") or ""
+                            stats = _get_or_create_stats(
+                                stats_store, "claude", session_id, project_path, file_path
+                            )
+                            stats.turn_durations_ms.append(int(duration_ms))
+                    continue
+
                 if item_type not in {"user", "assistant"}:
                     continue
 
@@ -330,6 +506,31 @@ def _parse_claude_psyco(
                 message = item.get("message") or {}
 
                 if item_type == "user":
+                    content = message.get("content") or []
+                    if isinstance(content, list):
+                        for part in content:
+                            if not isinstance(part, dict):
+                                continue
+                            if part.get("type") != "tool_result":
+                                continue
+                            call_id = str(part.get("tool_use_id") or "")
+                            if not call_id:
+                                continue
+                            row_idx = tool_row_index_by_call.get((session_id, call_id))
+                            if row_idx is None:
+                                continue
+                            is_error = part.get("is_error")
+                            success = None
+                            if isinstance(is_error, bool):
+                                success = not is_error
+                            else:
+                                success = _infer_tool_success_from_output(part.get("content"))
+                            tool_rows[row_idx]["success"] = success
+                            if success is False:
+                                tool_rows[row_idx]["error_hint"] = str(part.get("content") or "").replace(
+                                    "\n", " "
+                                ).strip()[:220]
+
                     texts = _extract_text_items(message.get("content"))
                     if isinstance(message.get("content"), str):
                         texts = [message["content"].strip()] if message["content"].strip() else []
@@ -348,11 +549,26 @@ def _parse_claude_psyco(
                         )
                     continue
 
+                # Detect subagent (sidechain) messages
+                if item.get("isSidechain") and item.get("agentId"):
+                    # Count unique agentIds as subagent spawns
+                    agent_id = item.get("agentId")
+                    if agent_id and not hasattr(stats, "_seen_agents"):
+                        stats._seen_agents = set()  # type: ignore[attr-defined]
+                    if agent_id and hasattr(stats, "_seen_agents"):
+                        if agent_id not in stats._seen_agents:  # type: ignore[attr-defined]
+                            stats._seen_agents.add(agent_id)  # type: ignore[attr-defined]
+                            stats.subagent_count += 1
+
                 content = message.get("content") or []
                 text_found = False
                 if isinstance(content, list):
                     for part in content:
                         if not isinstance(part, dict):
+                            continue
+                        # Count thinking/reasoning blocks
+                        if part.get("type") == "thinking":
+                            stats.thinking_blocks += 1
                             continue
                         if part.get("type") == "text":
                             text = part.get("text")
@@ -377,6 +593,8 @@ def _parse_claude_psyco(
 
                         tool_name = part.get("name") or "unknown"
                         tool_input = part.get("input") or {}
+                        query_text = _extract_query_text_from_payload(tool_name, tool_input)
+                        target_files = _extract_target_files_from_payload(tool_name, tool_input)
 
                         stats.tool_calls_total += 1
                         stats.tool_counts[tool_name] += 1
@@ -417,6 +635,11 @@ def _parse_claude_psyco(
                                         if isinstance(new_string, str):
                                             stats.code_lines_written += _count_lines(new_string)
 
+                        if target_files:
+                            stats.files_touched.update(target_files)
+
+                        call_id = str(part.get("id") or "")
+
                         tool_rows.append(
                             {
                                 "source": "claude",
@@ -425,8 +648,15 @@ def _parse_claude_psyco(
                                 "project_name": stats.project_name,
                                 "tool_name": tool_name,
                                 "is_mcp": is_mcp,
+                                "query_text": query_text,
+                                "target_file": ", ".join(sorted(target_files)) if target_files else "",
+                                "call_id": call_id,
+                                "success": None,
+                                "error_hint": "",
                             }
                         )
+                        if call_id:
+                            tool_row_index_by_call[(session_id, call_id)] = len(tool_rows) - 1
         except Exception as exc:  # pragma: no cover - defensive for mixed historical logs
             warnings.append(f"Failed to parse Claude file {file_path}: {exc}")
 
@@ -466,6 +696,16 @@ def parse_psyco_analytics(
                 "code_lines_written": stats.code_lines_written,
                 "files_touched_count": len(stats.files_touched),
                 "files_touched": ", ".join(sorted(stats.files_touched)[:40]),
+                "subagent_count": stats.subagent_count,
+                "thinking_blocks": stats.thinking_blocks,
+                "avg_turn_duration_ms": (
+                    int(sum(stats.turn_durations_ms) / len(stats.turn_durations_ms))
+                    if stats.turn_durations_ms
+                    else 0
+                ),
+                "total_turn_duration_ms": sum(stats.turn_durations_ms),
+                "rate_limit_max_pct": round(stats.rate_limit_max_pct, 1),
+                "rate_limit_daily_max_pct": round(stats.rate_limit_daily_max_pct, 1),
             }
         )
 
@@ -515,8 +755,19 @@ def parse_psyco_analytics(
         )
     if tool_df.empty:
         tool_df = pd.DataFrame(
-            columns=["source", "timestamp", "session_id", "project_name", "tool_name", "is_mcp"]
+            columns=[
+                "source",
+                "timestamp",
+                "session_id",
+                "project_name",
+                "tool_name",
+                "is_mcp",
+                "query_text",
+                "target_file",
+                "call_id",
+                "success",
+                "error_hint",
+            ]
         )
 
     return session_df, chat_df, tool_df, warnings
-

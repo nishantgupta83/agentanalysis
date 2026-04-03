@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 
@@ -43,16 +42,7 @@ def _safe_int(value: Any) -> int:
         return 0
 
 
-def _iter_jsonl(path: Path) -> Any:
-    with path.open("r", encoding="utf-8") as handle:
-        for line in handle:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                yield json.loads(line)
-            except json.JSONDecodeError:
-                continue
+from dashboard import iter_jsonl as _iter_jsonl
 
 
 def _project_name(project_path: str, source_path: Path) -> str:
@@ -170,7 +160,7 @@ def _parse_claude_file(path: Path) -> tuple[list[dict[str, Any]], list[dict[str,
     seen_usage: set[tuple[str, str]] = set()
     seen_tools: set[tuple[str, str]] = set()
 
-    for item in _iter_jsonl(path):
+    for event_index, item in enumerate(_iter_jsonl(path)):
         if item.get("type") != "assistant":
             continue
 
@@ -183,7 +173,23 @@ def _parse_claude_file(path: Path) -> tuple[list[dict[str, Any]], list[dict[str,
         model = message.get("model") or "unknown"
 
         if usage:
-            dedupe_key = (session_id, str(request_id))
+            usage_signature = "|".join(
+                [
+                    str(ts),
+                    str(model),
+                    str(_safe_int(usage.get("input_tokens"))),
+                    str(_safe_int(usage.get("output_tokens"))),
+                    str(_safe_int(usage.get("cache_read_input_tokens"))),
+                    str(_safe_int(usage.get("cache_creation_input_tokens"))),
+                    str(_safe_int(usage.get("reasoning_output_tokens"))),
+                ]
+            )
+            dedupe_id = (
+                str(request_id)
+                if request_id
+                else f"usage:{usage_signature}"
+            )
+            dedupe_key = (session_id, dedupe_id)
             if dedupe_key not in seen_usage:
                 seen_usage.add(dedupe_key)
                 input_tokens = _safe_int(usage.get("input_tokens"))
@@ -217,12 +223,17 @@ def _parse_claude_file(path: Path) -> tuple[list[dict[str, Any]], list[dict[str,
                 )
 
         content = message.get("content") or []
-        for content_item in content:
+        for content_index, content_item in enumerate(content):
             if not isinstance(content_item, dict):
                 continue
             if content_item.get("type") != "tool_use":
                 continue
-            tool_id = content_item.get("id") or f"{request_id}:{content_item.get('name')}"
+            tool_id = content_item.get("id")
+            if not tool_id:
+                tool_id = (
+                    f"{request_id or 'no-request'}:{content_item.get('name')}:"
+                    f"{event_index}:{content_index}"
+                )
             dedupe_key = (session_id, str(tool_id))
             if dedupe_key in seen_tools:
                 continue

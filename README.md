@@ -1,64 +1,125 @@
-# Agent Usage Dashboard
+# AI Usage Analytics Template
 
-Local Streamlit dashboard for:
-- Codex usage from `~/.codex/sessions/*.jsonl`
-- Claude Code usage from `~/.claude/projects/**/*.jsonl`
+Public-safe template for an AI usage analytics pipeline:
 
-It gives:
-- project-level and model-level usage views
-- session/event-level granular drill-down
-- psyco analysis tab for session back-and-forth, AI code line/file activity, and MCP usage
-- tool-call activity
-- estimated USD cost breakdown using either token pricing or monthly subscription allocation
+1. Read local Codex and Claude JSONL logs
+2. Normalize usage and tool-call events
+3. Aggregate daily analytics into Supabase `usage_*` tables
+4. Serve a public dashboard through PHP endpoints that read from Supabase server-side
+
+This repo is a sanitized architecture repo. It keeps the real system shape and endpoint names, but replaces all environment-specific values with placeholders.
+
+## What This Repo Shows
+
+- How local AI logs are parsed into normalized event rows
+- How raw rows become daily rollups in Supabase
+- How the public dashboard fetches data from `web/api/dashboard_data.php`
+- How the browser stays isolated from the Supabase service-role key
+
+## End-to-End Flow
+
+```mermaid
+flowchart LR
+    A[Local Codex JSONL logs] --> B[dashboard/parsers.py]
+    A2[Local Claude JSONL logs] --> B
+    A --> C[dashboard/psyco.py]
+    A2 --> C
+    B --> D[dashboard/rollups.py]
+    C --> D
+    D --> E[scripts/sync_usage_to_supabase.py]
+    E --> F[Supabase usage_* tables]
+    F --> G[web/api/dashboard_data.php]
+    G --> H[web/app.js]
+    H --> I[Public dashboard in web/index.html]
+```
+
+## Repo Layout
+
+- `dashboard/`: parsers and rollup helpers
+- `scripts/`: sync entrypoints
+- `supabase/`: base schema and follow-up migrations
+- `web/`: public dashboard template and PHP API proxy
+- `docs/`: architecture, API, and security notes
+- `examples/`: sanitized sample logs and API payloads
 
 ## Quick Start
 
-1. Create and activate a virtualenv (optional but recommended):
+### 1. Install Python dependencies
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-```
-
-2. Install dependencies:
-```bash
 pip install -r requirements.txt
 ```
 
-3. Run dashboard:
+### 2. Configure environment
+
 ```bash
-streamlit run app.py
+cp .env.example .env
 ```
 
-## Pricing Accuracy
+Fill in:
 
-You can choose cost mode in the sidebar:
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `CODEX_ROOT`
+- `CLAUDE_ROOT`
 
-- `Fixed Monthly Subscription`:
-  - defaulted to `Codex $20/month` and `Claude $20/month`
-  - allocates monthly fee down to events/projects by token weight (or event count)
-- `Token Pricing`:
-  - uses local token telemetry and `config/pricing.json`
+### 3. Create the Supabase schema
 
-For `Token Pricing` mode:
-- update `config/pricing.json` with your exact contracted rates
-- any model without an explicit match uses the `default` rates
-- wildcards are supported, for example `"claude-haiku-4-5-*"` in `models`
+Run the files in this order:
 
-## Parsing Notes
+1. `supabase/schema_usage.sql`
+2. `supabase/migrations/20260317_hero_metadata_columns.sql`
+3. `supabase/migrations/20260328000000_new_metrics_columns.sql`
+4. `supabase/migrations/20260316000000_revoke_public_read_sessions_tools.sql`
 
-- Codex:
-  - Uses `token_count` events in session JSONL.
-  - Per-event usage is computed as delta from cumulative `total_token_usage`.
-  - Duplicate telemetry events are naturally ignored via zero-delta filtering.
-- Claude:
-  - Uses assistant `message.usage` from project JSONL.
-  - Dedupes repeated streaming entries by `(sessionId, requestId)`.
-  - Captures tool calls from `message.content` entries with `type=tool_use`.
+### 4. Test the log parser without writing
 
-## Main Files
+```bash
+python scripts/sync_usage_to_supabase.py --dry-run
+```
 
-- `app.py`: Streamlit UI and visualizations
-- `dashboard/parsers.py`: Codex/Claude log parsers
-- `dashboard/psyco.py`: session chat/activity/MCP analytics parser
-- `dashboard/pricing.py`: pricing resolution + cost computation
-- `config/pricing.json`: editable pricing table
+### 5. Sync recent data into Supabase
+
+```bash
+python scripts/sync_usage_to_supabase.py --days-back 90
+```
+
+### 6. Deploy the public dashboard
+
+Upload `web/` to your PHP-capable host, then:
+
+1. Review `web/config.js` and adjust browser-safe values if needed
+2. Copy `web/api/config.local.example.php` to `web/api/config.local.php`
+3. Fill in placeholder values server-side only
+4. Keep `web/api/.htaccess` deployed
+
+The browser calls:
+
+- `GET /api/dashboard_data.php?days=30`
+- `GET /api/views.php`
+
+Only the PHP layer talks to Supabase with the service-role key.
+
+## Key Tables
+
+- `usage_events`: normalized token usage events
+- `usage_tool_calls`: normalized tool calls with optional success/error hints
+- `usage_sessions_daily`: per-session daily rollups
+- `usage_projects_daily`: per-project daily rollups
+- `usage_models_daily`: per-model daily rollups
+- `usage_sources_daily`: per-source daily rollups
+- `usage_dashboard_metadata`: global dashboard summary row
+- `usage_sync_runs`: optional sync audit trail
+
+## Public API Surface
+
+- `GET /api/dashboard_data.php?days=<1..365>`
+- `GET /api/views.php`
+
+See:
+
+- [Architecture](docs/architecture.md)
+- [API Reference](docs/api.md)
+- [Security Notes](docs/security.md)

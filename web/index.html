@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Usage Analytics Template</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="hero">
+        <p class="eyebrow">Public-Safe Architecture Template</p>
+        <h1>AI Usage Analytics Dashboard</h1>
+        <p class="lede">
+          This template shows the end-to-end path from local AI session logs to Supabase analytics
+          tables and a public dashboard served through PHP endpoints.
+        </p>
+        <div class="controls" id="rangeButtons">
+          <button data-days="7">7D</button>
+          <button data-days="30" class="active">30D</button>
+          <button data-days="90">90D</button>
+        </div>
+      </header>
+
+      <section class="grid cards">
+        <article class="card">
+          <p class="label">Sessions</p>
+          <p class="value" id="statSessions">--</p>
+          <p class="sub">distinct sessions in range</p>
+        </article>
+        <article class="card">
+          <p class="label">Tokens</p>
+          <p class="value" id="statTokens">--</p>
+          <p class="sub">processed across all sources</p>
+        </article>
+        <article class="card">
+          <p class="label">Tool Calls</p>
+          <p class="value" id="statToolCalls">--</p>
+          <p class="sub">raw tool-call rows</p>
+        </article>
+        <article class="card">
+          <p class="label">Active Days</p>
+          <p class="value" id="statActiveDays">--</p>
+          <p class="sub">days with recorded activity</p>
+        </article>
+      </section>
+
+      <section class="grid two-col">
+        <article class="panel">
+          <h2>Pipeline</h2>
+          <ol class="steps">
+            <li>Parse local Codex and Claude JSONL logs</li>
+            <li>Normalize usage events and tool-call rows</li>
+            <li>Aggregate daily session, project, model, and source tables</li>
+            <li>Read the dashboard through `GET /api/dashboard_data.php?days=N`</li>
+          </ol>
+        </article>
+
+        <article class="panel">
+          <h2>Security Boundary</h2>
+          <ul class="plain">
+            <li>Browser reads only JSON from PHP endpoints</li>
+            <li>Supabase service-role key stays server-side</li>
+            <li>Raw secrets belong in `.env` or `web/api/config.local.php` only</li>
+            <li>Public repo ships placeholders and sample payloads only</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="grid two-col">
+        <article class="panel">
+          <h2>Endpoint Summary</h2>
+          <table class="endpoint-table">
+            <thead>
+              <tr>
+                <th>Endpoint</th>
+                <th>Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>GET /api/dashboard_data.php?days=N</code></td>
+                <td>Returns aggregated dashboard payload plus row collections for drilldowns</td>
+              </tr>
+              <tr>
+                <td><code>GET /api/views.php</code></td>
+                <td>Returns the page-view counter used by the public frontend</td>
+              </tr>
+            </tbody>
+          </table>
+        </article>
+
+        <article class="panel">
+          <h2>Current Payload Shape</h2>
+          <ul class="plain" id="rowCounts">
+            <li>metadata: --</li>
+            <li>source_rows: --</li>
+            <li>project_rows: --</li>
+            <li>model_rows: --</li>
+            <li>session_rows: --</li>
+            <li>tool_call_rows: --</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>Latest API Status</h2>
+        <p id="statusMessage">Loading dashboard data...</p>
+        <pre id="metadataPreview">--</pre>
+      </section>
+    </main>
+
+    <script src="./config.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

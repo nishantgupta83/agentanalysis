@@ -1,0 +1,4 @@
+{"timestamp":"2026-03-15T16:08:00Z","type":"session_meta","payload":{"id":"codex-demo-session","cwd":"/Users/demo/workspace/template-app","model":"gpt-5.2-codex"}}
+{"timestamp":"2026-03-15T16:08:05Z","type":"response_item","payload":{"type":"function_call","name":"exec_command","call_id":"call_demo_001","arguments":"{\"cmd\":\"rg -n \\\"TODO\\\" src\"}"}}
+{"timestamp":"2026-03-15T16:08:09Z","type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":1200,"output_tokens":430,"cached_input_tokens":200,"reasoning_output_tokens":55}}}}
+

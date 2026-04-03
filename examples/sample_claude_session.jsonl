@@ -1,0 +1,3 @@
+{"timestamp":"2026-03-16T09:10:00Z","type":"assistant","sessionId":"claude-demo-session","cwd":"/Users/demo/workspace/template-app","requestId":"req_demo_001","message":{"model":"claude-sonnet","usage":{"input_tokens":900,"output_tokens":320,"cache_read_input_tokens":140,"cache_creation_input_tokens":0,"reasoning_output_tokens":35},"content":[{"type":"text","text":"I inspected the repository and found the API entrypoint."},{"type":"tool_use","id":"toolu_demo_001","name":"Read","input":{"file_path":"web/api/dashboard_data.php"}}]}}
+{"timestamp":"2026-03-16T09:10:04Z","type":"user","sessionId":"claude-demo-session","message":{"content":[{"type":"tool_result","tool_use_id":"toolu_demo_001","is_error":false,"content":"Read completed"}]}}
+

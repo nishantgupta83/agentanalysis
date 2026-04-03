@@ -1,0 +1,47 @@
+{
+  "ok": true,
+  "days": 30,
+  "range_start": "2026-03-01",
+  "range_end": "2026-03-30",
+  "metadata": {
+    "metadata_key": "global",
+    "generated_at_utc": "2026-03-30T23:59:59+00:00",
+    "range_start": "2026-03-01",
+    "range_end": "2026-03-30",
+    "total_events": 148,
+    "total_sessions": 12,
+    "total_projects": 4,
+    "total_tokens": 248500,
+    "total_cost_usd": 0.0,
+    "total_tool_calls": 93,
+    "total_mcp_calls": 12,
+    "total_code_lines_written": 1640,
+    "rolling_7d_cost_usd": 0.0,
+    "rolling_30d_cost_usd": 0.0,
+    "rolling_7d_tokens": 81250,
+    "rolling_30d_tokens": 248500,
+    "peak_day": "2026-03-18",
+    "peak_day_cost_usd": 0.0,
+    "ai_leverage_score": 6.2,
+    "longest_streak_days": 8,
+    "current_streak_days": 3,
+    "total_active_days": 14,
+    "avg_claude_session_min": 11.4,
+    "avg_codex_session_min": 8.6,
+    "updated_at": "2026-03-30T23:59:59+00:00"
+  },
+  "source_rows": [
+    {
+      "usage_date": "2026-03-30",
+      "source": "codex",
+      "sessions": 2,
+      "tool_calls": 11,
+      "total_tokens": 18500
+    }
+  ],
+  "project_rows": [],
+  "model_rows": [],
+  "session_rows": [],
+  "tool_call_rows": []
+}
+
